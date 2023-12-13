@@ -18,13 +18,11 @@ export class ClassroomController {
     @Body('_id') _id: string,
     @Body('name') name: string,
     @Body('numberOfSeats') numberOfSeats: number,
-    @Body('numberOfSeatsLeft') numberOfSeatsLeft: number,
   ) {
     const newClassroom = await this.classroomService.insertClassroom(
       _id,
       name,
       numberOfSeats,
-      numberOfSeatsLeft,
     );
     return newClassroom;
   }

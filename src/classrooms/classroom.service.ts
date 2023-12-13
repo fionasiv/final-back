@@ -15,8 +15,8 @@ export class ClassroomService {
     _id: string,
     name: string,
     numberOfSeats: number,
-    numberOfSeatsLeft: number,
   ) {
+    const numberOfSeatsLeft = numberOfSeats;
     const newClassroom = new this.classroomsModel({
       _id,
       name,
