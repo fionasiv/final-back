@@ -20,7 +20,7 @@ export class StudentController {
     @Body('lastName') lastName: string,
     @Body('age') age: number,
     @Body('profession') profession: string,
-    @Body('classId') classId: number,
+    @Body('classId')  classId: number | null
   ) {
     const newStudent = await this.studentService.insertStudent(
       _id,
@@ -28,7 +28,7 @@ export class StudentController {
       lastName,
       age,
       profession,
-      classId,
+      classId
     );
     return newStudent;
   }

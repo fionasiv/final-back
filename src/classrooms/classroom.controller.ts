@@ -24,34 +24,54 @@ export class ClassroomController {
       name,
       numberOfSeats,
     );
+
     return newClassroom;
   }
 
   @Get()
   async getClassrooms() {
     const classrooms = await this.classroomService.getClassrooms();
+
     return classrooms;
   }
 
   @Get(':id')
   async getClassroom(@Param('id') classroomId: string) {
+
     return await this.classroomService.getClassroomById(classroomId);
   }
 
-  @Patch(':id')
-  async updateClassroom(
+  @Patch(':id/students')
+  async addStudent(
     @Param('id') classroomId: string,
-    @Body('title') classroomName: string,
-    @Body('description') classroomNumOfSeats: number,
-    @Body('price') classroomSeatsLeft: number,
+    @Body('studentId') studentId: string
   ) {
-    //   await this.classroomService.updateClassroom(classroomId, classroomName, classroomNumOfSeats, classroomSeatsLeft);
-    return { update: 'success' };
+
+    return this.classroomService.addStudentToClassroom(classroomId, studentId);
   }
+
+  @Patch(':id/students/:studentId')
+  async removeStudent(
+    @Param('id') classroomId: string,
+    @Param('studentId') studentId: string
+  ) {
+
+    return this.classroomService.removeStudentFromClassroom(classroomId, studentId);
+  }
+
+  @Get(':id/students')
+  async getStudents(
+    @Param('id') classroomId: string,
+  ) {
+
+    return await this.classroomService.getClassroomStudents(classroomId)
+  }
+  
 
   @Delete(':id')
   async removeClassroomById(@Param('id') classroomId: string) {
     await this.classroomService.deleteClassroom(classroomId);
+    
     return { delete: 'success' };
   }
 }

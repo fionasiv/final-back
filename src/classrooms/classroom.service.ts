@@ -1,81 +1,124 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { Classroom } from './classroom.model';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Injectable, NotFoundException, UnprocessableEntityException } from "@nestjs/common";
+import { Classroom } from "./classroom.model";
+import { InjectModel } from "@nestjs/mongoose";
+import mongoose, { Model } from "mongoose";
+import { Types } from "mongoose";
+import { Student } from "src/students/student.model";
+import { StudentService } from "src/students/student.service";
 
 @Injectable()
 export class ClassroomService {
   private classrooms: Classroom[] = [];
+  private readonly studentService: StudentService;
 
   constructor(
-    @InjectModel(Classroom.name) private classroomsModel: Model<Classroom>,
+    @InjectModel(Classroom.name) private classroomsModel: Model<Classroom>
   ) {}
 
-  async insertClassroom(
-    _id: string,
-    name: string,
-    numberOfSeats: number,
-  ) {
-    const numberOfSeatsLeft = numberOfSeats;
+  async insertClassroom(_id: string, name: string, numberOfSeats: number) {
+    const numberOfSeatsLeft = numberOfSeats; 
     const newClassroom = new this.classroomsModel({
-      _id,
+      _id: new Types.ObjectId(),
       name,
       numberOfSeats,
       numberOfSeatsLeft,
     });
     const result = await this.classroomsModel.create(newClassroom);
+
     return result;
   }
 
   async getClassrooms(): Promise<Classroom[]> {
-    const classrooms = await this.classroomsModel.find().exec();
+    const classrooms = await this.classroomsModel.find().populate("students");
+
     return classrooms;
   }
 
   async getClassroomById(classroomId: string) {
     let classroom: Classroom;
+
     try {
-      classroom = await this.findClassroomById(classroomId);
+      classroom = await this.getPopulatedClassroom(classroomId);
     } catch (error) {
-      throw new NotFoundException('Could not find classroom');
+      throw new NotFoundException("Could not find classroom");
     }
+
     if (!classroom) {
-      throw new NotFoundException('Could not find classroom');
+      throw new NotFoundException("Could not find classroom");
     }
+
     return classroom;
   }
-
-  // async updateClassroom(
-  //   classroomId: string,
-  //   newName: string,
-  //   newNumberOfSeats: number,
-  //   newNumberOfSeatsLeft: number,
-  // ) {
-  //   const updatedClassRoom = {}
-  //   if (newName) updatedClassRoom["name"] = newName;
-  //   if (newNumberOfSeats) updatedClassRoom["numberOfSeats"] = newNumberOfSeats;
-  //   if (newNumberOfSeatsLeft) updatedClassRoom["numberOfSeatsLeft"] = newNumberOfSeatsLeft;
-  //   console.log(updatedClassRoom)
-
-  //   const classroom = await this.classroomsModel.findOneAndUpdate({_id: classroomId}, updatedClassRoom).exec();
-  //   await classroom.save();
-  // }
 
   async deleteClassroom(classroomId: string) {
-    const result = await this.classroomsModel
-      .deleteOne({ _id: classroomId })
-      .exec();
-    console.log(result);
+    const result = await this.classroomsModel.deleteOne({ _id: classroomId });
+
     if (result.deletedCount === 0) {
-      throw new NotFoundException('Could not find classroom');
+      throw new NotFoundException("Could not find classroom");
+    }
+
+    return result;
+  }
+
+  async addStudentToClassroom(classId: string, studentId: string) {
+    const classroom = await this.getPopulatedClassroom(classId);
+    
+    if (!classroom) {
+      throw new NotFoundException("classroom not found");
+    } else {
+      const isInClassroom = await this.isStudentInClassroom(classId, studentId);
+      if (isInClassroom) {
+        throw new UnprocessableEntityException("student already exists in class");
+      } else {
+        return classroom.updateOne({
+          $addToSet: { students: new mongoose.Types.ObjectId(studentId) },
+          $inc: { numberOfSeatsLeft: -1 },
+        });
+      }
     }
   }
 
-  private async findClassroomById(id: string): Promise<Classroom> {
-    const classroom = await this.classroomsModel.findById(id);
+  async removeStudentFromClassroom(classId: string, studentId: string) {
+    const classroom = await this.getPopulatedClassroom(classId);
+
     if (!classroom) {
-      throw new NotFoundException('could not find classroom');
+      throw new NotFoundException("classroom not found");
+    } else {
+      const isInClassroom = await this.isStudentInClassroom(classId, studentId);
+      if (!isInClassroom) {
+        throw new NotFoundException("student not exists in class");
+      } else {
+        return classroom.updateOne({
+          $inc: { numberOfSeatsLeft: 1 },
+          $pull: { students: new mongoose.Types.ObjectId(studentId) },
+        });
+      }
     }
-    return classroom;
+  }
+
+  async getClassroomStudents(classId: string) {
+    const classroom = await this.getPopulatedClassroom(classId);
+
+    if (!classroom) {
+      throw new NotFoundException("classroom not found");
+    }
+
+    return classroom.students;
+  }
+
+  private async getPopulatedClassroom(classId: string) {
+
+    return await this.classroomsModel
+      .findById(new Types.ObjectId(classId))
+      .populate("students");
+  }
+
+  private async isStudentInClassroom(classId: string, studentId: string) {
+    const students = await this.getClassroomStudents(classId);
+    const student = students.find(
+      (student: Student) => student._id.toString() === studentId
+    );
+
+    return student ? true : false;
   }
 }
