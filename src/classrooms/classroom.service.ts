@@ -5,6 +5,7 @@ import mongoose, { Model } from "mongoose";
 import { Types } from "mongoose";
 import { Student } from "src/students/student.model";
 import { StudentService } from "src/students/student.service";
+import { Seats } from "src/enums";
 
 @Injectable()
 export class ClassroomService {
@@ -18,7 +19,7 @@ export class ClassroomService {
   async insertClassroom(_id: string, name: string, numberOfSeats: number) {
     const numberOfSeatsLeft = numberOfSeats; 
     const newClassroom = new this.classroomsModel({
-      _id: new Types.ObjectId(),
+      _id: _id,
       name,
       numberOfSeats,
       numberOfSeatsLeft,
@@ -29,7 +30,7 @@ export class ClassroomService {
   }
 
   async getClassrooms(): Promise<Classroom[]> {
-    const classrooms = await this.classroomsModel.find().populate("students");
+    const classrooms = await this.classroomsModel.find().exec();
 
     return classrooms;
   }
@@ -38,7 +39,7 @@ export class ClassroomService {
     let classroom: Classroom;
 
     try {
-      classroom = await this.getPopulatedClassroom(classroomId);
+      classroom = await this.classroomsModel.findById(classroomId);
     } catch (error) {
       throw new NotFoundException("Could not find classroom");
     }
@@ -60,52 +61,52 @@ export class ClassroomService {
     return result;
   }
 
-  async addStudentToClassroom(classId: string, studentId: string) {
-    const classroom = await this.getPopulatedClassroom(classId);
+  // async addStudentToClassroom(classId: string, studentId: string) {
+  //   const classroom = await this.getPopulatedClassroom(classId);
     
-    if (!classroom) {
-      throw new NotFoundException("classroom not found");
-    } else {
-      const isInClassroom = await this.isStudentInClassroom(classId, studentId);
-      if (isInClassroom) {
-        throw new UnprocessableEntityException("student already exists in class");
-      } else {
-        return classroom.updateOne({
-          $addToSet: { students: new mongoose.Types.ObjectId(studentId) },
-          $inc: { numberOfSeatsLeft: -1 },
-        });
-      }
-    }
-  }
+  //   if (!classroom) {
+  //     throw new NotFoundException("classroom not found");
+  //   } else {
+  //     const isInClassroom = await this.isStudentInClassroom(classId, studentId);
+  //     if (isInClassroom) {
+  //       throw new UnprocessableEntityException("student already exists in class");
+  //     } else {
+  //       return classroom.updateOne({
+  //         $addToSet: { students: new mongoose.Types.ObjectId(studentId) },
+  //         $inc: { numberOfSeatsLeft: -1 },
+  //       });
+  //     }
+  //   }
+  // }
 
-  async removeStudentFromClassroom(classId: string, studentId: string) {
-    const classroom = await this.getPopulatedClassroom(classId);
-    console.log(studentId)
+  // async removeStudentFromClassroom(classId: string, studentId: string) {
+  //   const classroom = await this.getPopulatedClassroom(classId);
+  //   console.log(studentId)
 
-    if (!classroom) {
-      throw new NotFoundException("classroom not found");
-    } else {
-      const isInClassroom = await this.isStudentInClassroom(classId, studentId);
-      if (!isInClassroom) {
-        throw new NotFoundException("student not exists in class");
-      } else {
-        return classroom.updateOne({
-          $inc: { numberOfSeatsLeft: 1 },
-          $pull: { students: new mongoose.Types.ObjectId(studentId) },
-        });
-      }
-    }
-  }
+  //   if (!classroom) {
+  //     throw new NotFoundException("classroom not found");
+  //   } else {
+  //     const isInClassroom = await this.isStudentInClassroom(classId, studentId);
+  //     if (!isInClassroom) {
+  //       throw new NotFoundException("student not exists in class");
+  //     } else {
+  //       return classroom.updateOne({
+  //         $inc: { numberOfSeatsLeft: 1 },
+  //         $pull: { students: new mongoose.Types.ObjectId(studentId) },
+  //       });
+  //     }
+  //   }
+  // }
 
-  async getClassroomStudents(classId: string) {
-    const classroom = await this.getPopulatedClassroom(classId);
+  // async getClassroomStudents(classId: string) {
+  //   const classroom = await this.getPopulatedClassroom(classId);
 
-    if (!classroom) {
-      throw new NotFoundException("classroom not found");
-    }
+  //   if (!classroom) {
+  //     throw new NotFoundException("classroom not found");
+  //   }
 
-    return classroom.students;
-  }
+  //   return classroom.students;
+  // }
 
   async getAvailableClasses() {
     const classrooms = await this.getClassrooms();
@@ -118,19 +119,27 @@ export class ClassroomService {
     });
   }
 
-  private async getPopulatedClassroom(classId: string) {
-
-    return await this.classroomsModel
-      .findById(new Types.ObjectId(classId))
-      .populate("students");
+  async updateSeats(classId: string, seats: Seats) {
+    const classroom = await this.classroomsModel.findById(classId);
+    console.log(classId)
+    classroom.numberOfSeatsLeft = classroom.numberOfSeatsLeft + seats;
+    classroom.save();
   }
+  
 
-  private async isStudentInClassroom(classId: string, studentId: string) {
-    const students = await this.getClassroomStudents(classId);
-    const student = students.find(
-      (student: Student) => student._id.toString() === studentId
-    );
+  // private async getPopulatedClassroom(classId: string) {
 
-    return student ? true : false;
-  }
+  //   return await this.classroomsModel
+  //     .findById(new Types.ObjectId(classId))
+  //     .populate("students");
+  // }
+
+  // private async isStudentInClassroom(classId: string, studentId: string) {
+  //   const students = await this.getClassroomStudents(classId);
+  //   const student = students.find(
+  //     (student: Student) => student._id.toString() === studentId
+  //   );
+
+  //   return student ? true : false;
+  // }
 }

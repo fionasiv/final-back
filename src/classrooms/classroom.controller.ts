@@ -49,33 +49,33 @@ export class ClassroomController {
     return classroom;
   }
 
-  @Get(":id/students")
-  async getStudents(@Param("id") classroomId: string) {
-    const classroomStudents = await this.classroomService.getClassroomStudents(classroomId);
+  // @Get(":id/students")
+  // async getStudents(@Param("id") classroomId: string) {
+  //   const classroomStudents = await this.classroomService.getClassroomStudents(classroomId);
 
-    return classroomStudents;
-  }
+  //   return classroomStudents;
+  // }
 
-  @Patch(":id/students")
-  async addStudent(
-    @Param("id") classroomId: string,
-    @Body("studentId") studentId: string
-  ) {
-    const newStudent = this.classroomService.addStudentToClassroom(classroomId, studentId);
+  // @Patch(":id/students")
+  // async addStudent(
+  //   @Param("id") classroomId: string,
+  //   @Body("studentId") studentId: string
+  // ) {
+  //   const newStudent = this.classroomService.addStudentToClassroom(classroomId, studentId);
 
-    return newStudent;
-  }
+  //   return newStudent;
+  // }
 
-  @Patch(":id/students/:studentId")
-  async removeStudent(
-    @Param("id") classroomId: string,
-    @Param("studentId") studentId: string
-  ) {
-    return this.classroomService.removeStudentFromClassroom(
-      classroomId,
-      studentId
-    );
-  }
+  // @Patch(":id/students/:studentId")
+  // async removeStudent(
+  //   @Param("id") classroomId: string,
+  //   @Param("studentId") studentId: string
+  // ) {
+  //   return this.classroomService.removeStudentFromClassroom(
+  //     classroomId,
+  //     studentId
+  //   );
+  // }
 
   @Delete(":id")
   async removeClassroomById(@Param("id") classroomId: string) {

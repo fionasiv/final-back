@@ -13,5 +13,6 @@ import { Classroom } from './classroom.model';
   ],
   controllers: [ClassroomController],
   providers: [ClassroomService],
+  exports: [ClassroomService]
 })
 export class ClassroomModule {}

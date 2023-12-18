@@ -5,7 +5,7 @@ import { Student } from "src/students/student.model";
 @Schema()
 export class Classroom {
   @Prop({ required: true })
-  _id: mongoose.Schema.Types.ObjectId;
+  _id: string;
 
   @Prop({ required: true })
   name: string;
@@ -16,8 +16,8 @@ export class Classroom {
   @Prop({ required: true })
   numberOfSeatsLeft: number;
 
-  @Prop({ type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Student', unique: true }] })
-  students: [Student];
+  // @Prop({ type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Student', unique: true }] })
+  // students: [Student];
 }
 
 export const ClassroomSchema = SchemaFactory.createForClass(Classroom);
