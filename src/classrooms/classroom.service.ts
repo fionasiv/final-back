@@ -80,6 +80,7 @@ export class ClassroomService {
 
   async removeStudentFromClassroom(classId: string, studentId: string) {
     const classroom = await this.getPopulatedClassroom(classId);
+    console.log(studentId)
 
     if (!classroom) {
       throw new NotFoundException("classroom not found");
@@ -104,6 +105,17 @@ export class ClassroomService {
     }
 
     return classroom.students;
+  }
+
+  async getAvailableClasses() {
+    const classrooms = await this.getClassrooms();
+
+    return classrooms.filter((classroom) => classroom.numberOfSeatsLeft > 0).map((classroom) => {
+      return {
+        id: classroom._id,
+        name: classroom.name
+      }
+    });
   }
 
   private async getPopulatedClassroom(classId: string) {
