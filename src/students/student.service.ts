@@ -1,10 +1,7 @@
 import { Inject, Injectable, NotFoundException } from "@nestjs/common";
 import { Student } from "./student.model";
 import { InjectModel } from "@nestjs/mongoose";
-import * as mongoose from "mongoose";
-import { Model, Types } from "mongoose";
-import { Classroom } from "src/classrooms/classroom.model";
-import { ObjectId } from "mongodb";
+import { Model } from "mongoose";
 import { ClassroomService } from "src/classrooms/classroom.service";
 import { Seats } from "src/enums";
 

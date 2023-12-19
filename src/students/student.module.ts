@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { StudentController } from './student.controller';
 import { StudentService } from './student.service';
@@ -13,5 +13,6 @@ import { ClassroomModule } from 'src/classrooms/classroom.module';
   ],
   controllers: [StudentController],
   providers: [StudentService],
+  exports: []
 })
 export class StudentModule {}
