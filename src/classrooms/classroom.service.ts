@@ -3,6 +3,7 @@ import { Classroom } from "./classroom.model";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
 import { Seats } from "src/enums";
+import { Document } from "mongoose";
 
 @Injectable()
 export class ClassroomService {
@@ -51,10 +52,26 @@ export class ClassroomService {
         };
       });
   }
-
+  
   async updateSeats(classId: string, seats: Seats) {
-    const classroom = await this.classroomsModel.findById(classId);
+    const classroom = await this.getClassroomById(classId);
     classroom.numberOfSeatsLeft = classroom.numberOfSeatsLeft + seats;
     classroom.save();
+  }
+  
+  private async getClassroomById(classroomId: string): Promise<Classroom> {
+    let classroom: Document;
+  
+    try {
+      classroom = await this.classroomsModel.findById(classroomId).exec();
+    } catch (error) {
+      throw new NotFoundException("Could not find classroom");
+    }
+  
+    if (!classroom) {
+      throw new NotFoundException("Could not find classroom");
+    }
+  
+    return classroom.toObject();
   }
 }

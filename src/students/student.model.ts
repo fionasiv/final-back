@@ -1,9 +1,10 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
+import { Document } from "mongoose";
 
 @Schema()
-export class Student {
+export class Student extends Document {
   @Prop({ required: true })
-  _id: string
+  _id: string;
 
   @Prop({ required: true })
   firstName: string;
@@ -17,8 +18,8 @@ export class Student {
   @Prop({ required: true })
   profession: string;
 
-  @Prop({ type: String, ref: 'Classroom' })
-  classroom: string
+  @Prop({ type: String, ref: "Classroom" })
+  classroom: string;
 }
 
 export const StudentSchema = SchemaFactory.createForClass(Student);

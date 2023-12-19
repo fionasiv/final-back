@@ -29,24 +29,22 @@ export class StudentController {
       age,
       profession
     );
+    
     return newStudent;
   }
 
   @Get()
   async getStudents() {
     const students = await this.studentService.getStudents();
-    return students;
-  }
 
-  @Get(":id")
-  async getStudent(@Param("id") studentId: string) {
-    return await this.studentService.getStudentById(studentId);
+    return students;
   }
 
   @Delete(":id")
   async removeStudentById(@Param("id") studentId: string) {
-    await this.studentService.deleteStudent(studentId);
-    return { delete: "success" };
+    const result = await this.studentService.deleteStudent(studentId);
+
+    return result;
   }
 
   @Get("classroom/:id")
@@ -62,16 +60,19 @@ export class StudentController {
     @Param("id") studentId: string,
     @Param("classId") classroomId: string
   ) {
-    const newStudent = this.studentService.addStudentToClass(
+    const assignedStudent = this.studentService.addStudentToClass(
       classroomId,
       studentId
     );
 
-    return newStudent;
+    return assignedStudent;
   }
 
   @Patch(":id/classroom")
   async removeStudentFromClass(@Param("id") studentId: string) {
-    return this.studentService.removeStudentFromClass(studentId);
+    const unassignedStudent =
+      this.studentService.removeStudentFromClass(studentId);
+
+    return unassignedStudent;
   }
 }
