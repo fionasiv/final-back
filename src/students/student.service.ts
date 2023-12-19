@@ -57,12 +57,17 @@ export class StudentService {
   }
 
   async deleteStudent(studentId: string) {
+    const classId = (await this.studentsModel.findById(studentId)).classroom
     const result = await this.studentsModel
       .deleteOne({ _id: studentId })
       .exec();
 
     if (result.deletedCount === 0) {
       throw new NotFoundException("Could not find student");
+    }
+
+    if (classId) {
+      await this.classroomService.updateSeats(classId, Seats.AVAILABLE);
     }
 
     return result;
