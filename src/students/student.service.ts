@@ -1,105 +1,139 @@
-import { Inject, Injectable, NotFoundException } from "@nestjs/common";
-import { Student } from "./student.model";
+import {
+  Injectable,
+  NotFoundException,
+  Inject,
+  BadRequestException,
+  UnprocessableEntityException,
+} from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
-import { Model, Document } from "mongoose";
+import { Document, Model } from "mongoose";
 import { ClassroomService } from "src/classrooms/classroom.service";
 import { Seats } from "src/enums";
 import { DeleteResult } from "mongodb";
+import { Student } from "./student.model";
+import { fieldChecks } from "src/consts";
 
 @Injectable()
 export class StudentService {
-  private students: Student[] = [];
-
   constructor(
     @InjectModel(Student.name) private studentsModel: Model<Student>,
     @Inject(ClassroomService) private classroomService: ClassroomService
   ) {}
 
-  async insertStudent(
-    _id: string,
-    firstName: string,
-    lastName: string,
-    age: number,
-    profession: string
-  ) {
-    const newStudent = new this.studentsModel({
-      _id,
-      firstName,
-      lastName,
-      age,
-      profession,
-      classroom: "",
-    });
-    const result = await this.studentsModel.create(newStudent);
-
-    return result;
+  async insertStudent(student: Student): Promise<void> {
+    try {
+      this.validateStudent(student);
+      const newStudent = {
+        ...student,
+        classroom: "",
+      };
+      const newStudentObject = new this.studentsModel(newStudent);
+      await newStudentObject.save();
+    } catch (error) {
+      if (error.code === 11000 || error.code === 11001) {
+        console.error("Duplicate key error. Document already exists!");
+        throw new BadRequestException("student already exists");
+      } else {
+        console.error("An error occurred:", error);
+        throw error;
+      }
+    }
   }
 
   async getStudents(): Promise<Student[]> {
-    const students = await this.studentsModel.find();
+    const students = await this.studentsModel.find().exec();
 
     return students;
   }
 
-  
   async deleteStudent(studentId: string): Promise<DeleteResult> {
-    const classId = (await this.getStudentById(studentId)).classroom;
-    
+    const student = await this.getStudentById(studentId);
+    const classId = student.classroom;
+
     if (classId) {
       await this.classroomService.updateSeats(classId, Seats.AVAILABLE);
     }
-    
-    const result = await this.studentsModel
-    .deleteOne({ _id: studentId })
-    .exec();
-    
-    if (result.deletedCount === 0) {
-      throw new NotFoundException("Could not find student");
+
+    try {
+      const result = await this.studentsModel
+        .deleteOne({ _id: studentId })
+        .exec();
+
+      if (result.deletedCount === 0) {
+        throw new NotFoundException("Could not find student");
+      }
+
+      return result;
+    } catch (error) {
+      if (error.code === 1) {
+        console.error("Document not found:", error.message);
+        throw new NotFoundException("Could not find document");
+      } else {
+        console.error("Unexpected error:", error.message);
+        throw error;
+      }
     }
-    
-    return result;
   }
-  
+
   async getClassroomStudents(classId: string): Promise<Student[]> {
-    const students = await this.getStudents();
-    
-    return students.filter((student) => student.classroom === classId);
+    const students = await this.studentsModel
+      .find({ classroom: classId })
+      .exec();
+
+    return students;
   }
-  
-  async addStudentToClass(classId: string, studentId: string) {
+
+  async addStudentToClass(
+    classId: string,
+    studentId: string
+  ): Promise<Student> {
     const student = await this.getStudentById(studentId);
     student.classroom = classId;
-    await student.save();
-    
+    student.save();
+
     await this.classroomService.updateSeats(classId, Seats.TAKEN);
-    
+
     return student;
   }
-  
-  async removeStudentFromClass(studentId: string) {
+
+  async removeStudentFromClass(studentId: string): Promise<Student & Document> {
     const student = await this.getStudentById(studentId);
     const classId = student.classroom;
     student.classroom = "";
-    await student.save();
-    
+    student.save();
+
     await this.classroomService.updateSeats(classId, Seats.AVAILABLE);
-    
+
     return student;
   }
-  
-  private async getStudentById(studentId: string): Promise<Student> {
-    let student: Document;
-  
-    try {
-      student = await this.studentsModel.findById(studentId).exec();
-    } catch (error) {
-      throw new NotFoundException("Could not find student");
-    }
-  
+
+  private async getStudentById(
+    studentId: string
+  ): Promise<
+    Document<unknown, {}, Student> & Student & Required<{ _id: string }>
+  > {
+    const student = await this.studentsModel.findById(studentId).exec();
+
     if (!student) {
       throw new NotFoundException("Could not find student");
     }
-  
-    return student.toObject();
+
+    return student;
+  }
+
+  private validateStudent(student: Student) {
+    console.log(student);
+    const isValid =
+      fieldChecks.idCheck(student._id) &&
+      fieldChecks.onlyLettersCheck(student.firstName) &&
+      fieldChecks.onlyLettersCheck(student.lastName) &&
+      fieldChecks.ageCheck(student.age) &&
+      fieldChecks.onlyLettersCheck(student.profession);
+
+    if (!isValid) {
+      throw new UnprocessableEntityException("student params are invalid");
+    }
+
+    return isValid;
   }
 }
