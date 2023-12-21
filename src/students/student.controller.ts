@@ -8,15 +8,16 @@ import {
   Post,
 } from "@nestjs/common";
 import { StudentService } from "./student.service";
-import { Student } from "./student.model";
+import { Student } from "./student.schema";
 
 @Controller("students")
 export class StudentController {
   constructor(private readonly studentService: StudentService) {}
 
   @Post()
-  async addStudent(@Body("newStudent") newStudent: Student) {
+  async addStudent(@Body("student") newStudent: Student) {
     try {
+      console.log(newStudent)
       await this.studentService.insertStudent(newStudent);
     } catch (error) {
       throw error;

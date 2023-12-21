@@ -2,8 +2,8 @@ import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { StudentController } from './student.controller';
 import { StudentService } from './student.service';
-import { StudentSchema } from './student.model';
-import { Student } from './student.model';
+import { StudentSchema } from './student.schema';
+import { Student } from './student.schema';
 import { ClassroomModule } from 'src/classrooms/classroom.module';
 
 @Module({

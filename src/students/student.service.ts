@@ -10,7 +10,7 @@ import { Document, Model } from "mongoose";
 import { ClassroomService } from "src/classrooms/classroom.service";
 import { Seats } from "src/enums";
 import { DeleteResult } from "mongodb";
-import { Student } from "./student.model";
+import { Student } from "./student.schema";
 import { fieldChecks } from "src/consts";
 
 @Injectable()
@@ -22,16 +22,18 @@ export class StudentService {
 
   async insertStudent(student: Student): Promise<void> {
     try {
-      this.validateStudent(student);
+      console.log(student)
+      // this.validateStudent(student);
       const newStudent = {
         ...student,
         classroom: "",
       };
       const newStudentObject = new this.studentsModel(newStudent);
+      
       await newStudentObject.save();
     } catch (error) {
       if (error.code === 11000 || error.code === 11001) {
-        console.error("Duplicate key error. Document already exists!");
+        console.error("Duplicate key error. Student already exists!");
         throw new BadRequestException("student already exists");
       } else {
         console.error("An error occurred:", error);
@@ -46,7 +48,7 @@ export class StudentService {
     return students;
   }
 
-  async deleteStudent(studentId: string): Promise<DeleteResult> {
+  async deleteStudent(studentId: string): Promise<void> {
     const student = await this.getStudentById(studentId);
     const classId = student.classroom;
 
@@ -62,8 +64,6 @@ export class StudentService {
       if (result.deletedCount === 0) {
         throw new NotFoundException("Could not find student");
       }
-
-      return result;
     } catch (error) {
       if (error.code === 1) {
         console.error("Document not found:", error.message);
@@ -89,7 +89,7 @@ export class StudentService {
   ): Promise<Student> {
     const student = await this.getStudentById(studentId);
     student.classroom = classId;
-    student.save();
+    await student.save();
 
     await this.classroomService.updateSeats(classId, Seats.TAKEN);
 
@@ -100,7 +100,7 @@ export class StudentService {
     const student = await this.getStudentById(studentId);
     const classId = student.classroom;
     student.classroom = "";
-    student.save();
+    await student.save();
 
     await this.classroomService.updateSeats(classId, Seats.AVAILABLE);
 
@@ -122,7 +122,6 @@ export class StudentService {
   }
 
   private validateStudent(student: Student) {
-    console.log(student);
     const isValid =
       fieldChecks.idCheck(student._id) &&
       fieldChecks.onlyLettersCheck(student.firstName) &&

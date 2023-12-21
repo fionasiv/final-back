@@ -1,10 +1,16 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
-import { Classroom } from "./classroom.model";
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+  UnprocessableEntityException,
+} from "@nestjs/common";
+import { Classroom } from "./classroom.schema";
 import { InjectModel } from "@nestjs/mongoose";
-import { Model } from "mongoose";
+import { Document, Model } from "mongoose";
 import { Seats } from "src/enums";
-import { DeleteResult } from "mongodb";
-import { DisplayedItem } from "src/types";
+import { fieldChecks } from "src/consts";
+import ClassroomItem from "./interfaces/ClassroomItem";
+import ClassroomDTO from "./interfaces/classroomDTO";
 
 @Injectable()
 export class ClassroomService {
@@ -12,17 +18,27 @@ export class ClassroomService {
     @InjectModel(Classroom.name) private classroomsModel: Model<Classroom>
   ) {}
 
-  async insertClassroom(_id: string, name: string, numberOfSeats: number): Promise<Classroom> {
-    const numberOfSeatsLeft = numberOfSeats;
-    const newClassroom = new this.classroomsModel({
-      _id,
-      name,
-      numberOfSeats,
-      numberOfSeatsLeft,
-    });
-    const result = await this.classroomsModel.create(newClassroom);
+  async insertClassroom(newClassroom: ClassroomDTO): Promise<void> {
+    try {
+      this.validateClassroom(newClassroom);
+      const classroom = {
+        ...newClassroom,
+        numberOfSeatsLeft: newClassroom.numberOfSeats,
+      };
+      const newClassroomObject = new this.classroomsModel({
+        ...classroom,
+      });
 
-    return result;
+      await newClassroomObject.save();
+    } catch (error) {
+      if (error.code === 11000 || error.code === 11001) {
+        console.error("Duplicate key error. Classroom already exists!");
+        throw new BadRequestException("classroom already exists");
+      } else {
+        console.error("An error occurred:", error);
+        throw error;
+      }
+    }
   }
 
   async getClassrooms(): Promise<Classroom[]> {
@@ -31,17 +47,25 @@ export class ClassroomService {
     return classrooms;
   }
 
-  async deleteClassroom(classroomId: string): Promise<DeleteResult> {
-    const result = await this.classroomsModel.deleteOne({ _id: classroomId });
+  async deleteClassroom(classroomId: string): Promise<void> {
+    try {
+      const result = await this.classroomsModel.deleteOne({ _id: classroomId });
 
-    if (!result.deletedCount) {
-      throw new NotFoundException("Could not find classroom");
+      if (!result.deletedCount) {
+        throw new NotFoundException("Could not find classroom");
+      }
+    } catch (error) {
+      if (error.code === 1) {
+        console.error("Document not found:", error.message);
+        throw new NotFoundException("Could not find document");
+      } else {
+        console.error("Unexpected error:", error.message);
+        throw error;
+      }
     }
-
-    return result;
   }
 
-  async getAvailableClasses(): Promise<DisplayedItem[]> {
+  async getAvailableClasses(): Promise<ClassroomItem[]> {
     const classrooms = await this.getClassrooms();
 
     return classrooms
@@ -53,23 +77,37 @@ export class ClassroomService {
         };
       });
   }
-  
+
   async updateSeats(classId: string, seats: Seats): Promise<void> {
     const classroom = await this.getClassroomById(classId);
-    // classroom.numberOfSeatsLeft = classroom.numberOfSeatsLeft + seats;
-    await this.classroomsModel
-      .updateOne({ _id: classId }, { numberOfSeatsLeft: classroom.numberOfSeatsLeft + seats })
-      .exec();
-    // classroom.save();
+    classroom.numberOfSeatsLeft = classroom.numberOfSeatsLeft + seats;
+    await classroom.save();
   }
-  
-  private async getClassroomById(classroomId: string): Promise<Classroom> {
-    const classroom= await this.classroomsModel.findById(classroomId).exec();
-  
+
+  private async getClassroomById(
+    classroomId: string
+  ): Promise<
+    Document<unknown, {}, Classroom> & Classroom & Required<{ _id: string }>
+  > {
+    const classroom = await this.classroomsModel.findById(classroomId).exec();
+
     if (!classroom) {
       throw new NotFoundException("Could not find classroom");
     }
-  
-    return classroom.toObject();
+
+    return classroom;
+  }
+
+  private validateClassroom(classroom: ClassroomDTO) {
+    const isValid =
+      fieldChecks.idCheck(classroom._id) &&
+      fieldChecks.onlyLettersCheck(classroom.name) &&
+      fieldChecks.seatsAmountCheck(classroom.numberOfSeats);
+
+    if (!isValid) {
+      throw new UnprocessableEntityException("classroom params are invalid");
+    }
+
+    return isValid;
   }
 }

@@ -2,8 +2,8 @@ import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ClassroomController } from './classroom.controller';
 import { ClassroomService } from './classroom.service';
-import { ClassroomSchema } from './classroom.model';
-import { Classroom } from './classroom.model';
+import { ClassroomSchema } from './classroom.schema';
+import { Classroom } from './classroom.schema';
 
 @Module({
   imports: [
