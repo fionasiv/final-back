@@ -6,7 +6,7 @@ import {
 } from "@nestjs/common";
 import { Classroom } from "./classroom.schema";
 import { InjectModel } from "@nestjs/mongoose";
-import { Document, Model } from "mongoose";
+import { Model } from "mongoose";
 import { Seats } from "src/enums";
 import { fieldChecks } from "src/consts";
 import ClassroomItem from "./interfaces/ClassroomItem";

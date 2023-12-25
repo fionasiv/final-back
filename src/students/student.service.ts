@@ -9,7 +9,6 @@ import { InjectModel } from "@nestjs/mongoose";
 import { Document, Model } from "mongoose";
 import { ClassroomService } from "src/classrooms/classroom.service";
 import { Seats } from "src/enums";
-import { DeleteResult } from "mongodb";
 import { Student } from "./student.schema";
 import { fieldChecks } from "src/consts";
 
