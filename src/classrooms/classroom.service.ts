@@ -23,11 +23,10 @@ export class ClassroomService {
       this.validateClassroom(newClassroom);
       const classroom = {
         ...newClassroom,
-        numberOfSeatsLeft: newClassroom.numberOfSeats,
+        seatsLeft: newClassroom.capacity,
       };
-      const newClassroomObject = new this.classroomsModel({
-        ...classroom,
-      });
+      const newClassroomObject = new this.classroomsModel(classroom);
+      console.log(newClassroomObject);
 
       await newClassroomObject.save();
     } catch (error) {
@@ -48,19 +47,24 @@ export class ClassroomService {
   }
 
   async deleteClassroom(classroomId: string): Promise<void> {
-    try {
-      const result = await this.classroomsModel.deleteOne({ _id: classroomId });
-
-      if (!result.deletedCount) {
-        throw new NotFoundException("Could not find classroom");
-      }
-    } catch (error) {
-      if (error.code === 1) {
-        console.error("Document not found:", error.message);
-        throw new NotFoundException("Could not find document");
-      } else {
-        console.error("Unexpected error:", error.message);
-        throw error;
+    const classroom = await this.getClassroomById(classroomId);
+    if (classroom.seatsLeft !== classroom.capacity) {
+      throw new BadRequestException("cannot delete a classroom with seats taken");
+    } else {
+      try {
+        const result = await this.classroomsModel.deleteOne({ _id: classroomId });
+  
+        if (!result.deletedCount) {
+          throw new NotFoundException("Could not find classroom");
+        }
+      } catch (error) {
+        if (error.code === 1) {
+          console.error("Document not found:", error.message);
+          throw new NotFoundException("Could not find document");
+        } else {
+          console.error("Unexpected error:", error.message);
+          throw error;
+        }
       }
     }
   }
@@ -69,7 +73,7 @@ export class ClassroomService {
     const classrooms = await this.getClassrooms();
 
     return classrooms
-      .filter((classroom) => classroom.numberOfSeatsLeft > 0)
+      .filter((classroom) => classroom.seatsLeft > 0)
       .map((classroom) => {
         return {
           id: classroom._id,
@@ -80,15 +84,13 @@ export class ClassroomService {
 
   async updateSeats(classId: string, seats: Seats): Promise<void> {
     const classroom = await this.getClassroomById(classId);
-    classroom.numberOfSeatsLeft = classroom.numberOfSeatsLeft + seats;
+    classroom.seatsLeft = classroom.seatsLeft + seats;
     await classroom.save();
   }
 
-  private async getClassroomById(
+  async getClassroomById(
     classroomId: string
-  ): Promise<
-    Document<unknown, {}, Classroom> & Classroom & Required<{ _id: string }>
-  > {
+  ) {
     const classroom = await this.classroomsModel.findById(classroomId).exec();
 
     if (!classroom) {
@@ -102,7 +104,7 @@ export class ClassroomService {
     const isValid =
       fieldChecks.idCheck(classroom._id) &&
       fieldChecks.onlyLettersCheck(classroom.name) &&
-      fieldChecks.seatsAmountCheck(classroom.numberOfSeats);
+      fieldChecks.seatsAmountCheck(classroom.capacity);
 
     if (!isValid) {
       throw new UnprocessableEntityException("classroom params are invalid");

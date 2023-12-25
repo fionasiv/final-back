@@ -10,10 +10,10 @@ export class Classroom extends Document {
   name: string;
 
   @Prop({ required: true })
-  numberOfSeats: number;
+  capacity: number;
 
   @Prop({ required: true })
-  numberOfSeatsLeft: number;
+  seatsLeft: number;
 }
 
 export const ClassroomSchema = SchemaFactory.createForClass(Classroom);

@@ -17,7 +17,6 @@ export class StudentController {
   @Post()
   async addStudent(@Body("student") newStudent: Student) {
     try {
-      console.log(newStudent)
       await this.studentService.insertStudent(newStudent);
     } catch (error) {
       throw error;

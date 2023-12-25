@@ -22,8 +22,7 @@ export class StudentService {
 
   async insertStudent(student: Student): Promise<void> {
     try {
-      console.log(student)
-      // this.validateStudent(student);
+      this.validateStudent(student);
       const newStudent = {
         ...student,
         classroom: "",
@@ -87,31 +86,39 @@ export class StudentService {
     classId: string,
     studentId: string
   ): Promise<Student> {
-    const student = await this.getStudentById(studentId);
-    student.classroom = classId;
-    await student.save();
+    const classroom = await this.classroomService.getClassroomById(classId);
 
-    await this.classroomService.updateSeats(classId, Seats.TAKEN);
-
-    return student;
+    if (!classroom) {
+      throw new BadRequestException("classroom does not exist");
+    } else {
+      const student = await this.getStudentById(studentId);
+      student.classroom = classId;
+      await student.save();
+  
+      await this.classroomService.updateSeats(classId, Seats.TAKEN);
+  
+      return student;
+    }
   }
 
   async removeStudentFromClass(studentId: string): Promise<Student & Document> {
     const student = await this.getStudentById(studentId);
-    const classId = student.classroom;
-    student.classroom = "";
-    await student.save();
+    if (student.classroom === "") {
+      throw new BadRequestException("student is not in a classroom");
+    } else {
+      const classId = student.classroom;
+      student.classroom = "";
+      await student.save();
 
-    await this.classroomService.updateSeats(classId, Seats.AVAILABLE);
+      await this.classroomService.updateSeats(classId, Seats.AVAILABLE);
 
-    return student;
+      return student;
+    }
   }
 
   private async getStudentById(
     studentId: string
-  ): Promise<
-    Document<unknown, {}, Student> & Student & Required<{ _id: string }>
-  > {
+  ) {
     const student = await this.studentsModel.findById(studentId).exec();
 
     if (!student) {
@@ -124,8 +131,8 @@ export class StudentService {
   private validateStudent(student: Student) {
     const isValid =
       fieldChecks.idCheck(student._id) &&
-      fieldChecks.onlyLettersCheck(student.firstName) &&
-      fieldChecks.onlyLettersCheck(student.lastName) &&
+      fieldChecks.nameCheck(student.firstName) &&
+      fieldChecks.nameCheck(student.lastName) &&
       fieldChecks.ageCheck(student.age) &&
       fieldChecks.onlyLettersCheck(student.profession);
 
