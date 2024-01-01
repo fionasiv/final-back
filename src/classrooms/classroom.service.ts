@@ -26,7 +26,6 @@ export class ClassroomService {
         seatsLeft: newClassroom.capacity,
       };
       const newClassroomObject = new this.classroomsModel(classroom);
-      console.log(newClassroomObject);
 
       await newClassroomObject.save();
     } catch (error) {
@@ -102,7 +101,7 @@ export class ClassroomService {
 
   private validateClassroom(classroom: ClassroomDTO) {
     const isValid =
-      fieldChecks.idCheck(classroom._id) &&
+      fieldChecks.numericCheck(classroom._id) &&
       fieldChecks.onlyLettersCheck(classroom.name) &&
       fieldChecks.seatsAmountCheck(classroom.capacity);
 

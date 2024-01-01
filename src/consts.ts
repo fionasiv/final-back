@@ -1,7 +1,7 @@
 export const fieldChecks = {
   numericCheck: (value: string) => new RegExp("^[0-9]+$").test(value),
   idCheck: (value: string) =>
-    fieldChecks.numericCheck(value) && value.length > 8,
+    fieldChecks.numericCheck(value) && value.length === 9,
   nameCheck: (value: string) =>
     new RegExp("^[\u0590-\u05fea-zA-Z]+$").test(value),
   onlyLettersCheck: (value: string) =>
