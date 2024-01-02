@@ -7,7 +7,6 @@ import { ClassroomModule } from './classrooms/classroom.module';
 import { StudentModule } from './students/student.module';
  
 const DB_CONNECTION_STRING = `mongodb://${process.env.DB_USERNAME}:${process.env.DB_PASSWORD}@${process.env.DB_HOST}:${process.env.DB_PORT}/?ssl=${process.env.DB_SSL}&replicaSet=globaldb&retrywrites=false&maxIdleTimeMS=120000&appName=@${process.env.DB_USERNAME}@`;
-const DB_NAME = 'people-Training';
 
 @Module({
   imports: [
@@ -16,7 +15,7 @@ const DB_NAME = 'people-Training';
     MongooseModule.forRoot(
       DB_CONNECTION_STRING,
       {
-        dbName: DB_NAME,
+        dbName: process.env.DB_NAME,
       },
     ),
   ],

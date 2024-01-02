@@ -12,8 +12,8 @@ export class Student extends Document {
   @Prop({ required: true })
   lastName: string;
 
-  @Prop({ required: true })
-  age: number;
+  @Prop()
+  age: number | null;
 
   @Prop({ required: true })
   profession: string;

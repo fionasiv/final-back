@@ -4,6 +4,7 @@ import {
   Inject,
   BadRequestException,
   UnprocessableEntityException,
+  ConflictException,
 } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Document, Model } from "mongoose";
@@ -21,6 +22,7 @@ export class StudentService {
 
   async insertStudent(student: Student): Promise<void> {
     try {
+      student.age = student.age? student.age : null;
       this.validateStudent(student);
       const newStudent = {
         ...student,
@@ -32,7 +34,7 @@ export class StudentService {
     } catch (error) {
       if (error.code === 11000 || error.code === 11001) {
         console.error("Duplicate key error. Student already exists!");
-        throw new BadRequestException("student already exists");
+        throw new ConflictException("student already exists");
       } else {
         console.error("An error occurred:", error);
         throw error;
@@ -41,9 +43,11 @@ export class StudentService {
   }
 
   async getStudents(): Promise<Student[]> {
-    const students = await this.studentsModel.find().exec();
-
-    return students;
+    try {
+      return await this.studentsModel.find().exec();
+    } catch (error) {
+      throw error;
+    }
   }
 
   async deleteStudent(studentId: string): Promise<void> {
@@ -74,11 +78,13 @@ export class StudentService {
   }
 
   async getClassroomStudents(classId: string): Promise<Student[]> {
-    const students = await this.studentsModel
+    try {
+      return await this.studentsModel
       .find({ classroom: classId })
       .exec();
-
-    return students;
+    } catch (error) {
+      throw error;
+    }
   }
 
   async addStudentToClass(
@@ -132,7 +138,7 @@ export class StudentService {
       fieldChecks.idCheck(student._id) &&
       fieldChecks.nameCheck(student.firstName) &&
       fieldChecks.nameCheck(student.lastName) &&
-      fieldChecks.ageCheck(student.age) &&
+      student.age ? fieldChecks.ageCheck(student.age) : true &&
       fieldChecks.onlyLettersCheck(student.profession);
 
     if (!isValid) {

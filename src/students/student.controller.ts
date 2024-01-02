@@ -26,9 +26,7 @@ export class StudentController {
   @Get()
   async getStudents() {
     try {
-      const students = await this.studentService.getStudents();
-
-      return students;
+      return await this.studentService.getStudents();
     } catch (error) {
       throw error;
     }
@@ -46,10 +44,7 @@ export class StudentController {
   @Get("classroom/:id")
   async getClassroomStudents(@Param("id") classroomId: string) {
     try {
-      const classroomStudents =
-        await this.studentService.getClassroomStudents(classroomId);
-
-      return classroomStudents;
+      return await this.studentService.getClassroomStudents(classroomId);
     } catch (error) {
       throw error;
     }
@@ -61,12 +56,10 @@ export class StudentController {
     @Param("classId") classroomId: string
   ) {
     try {
-      const assignedStudent = await this.studentService.addStudentToClass(
+      return await this.studentService.addStudentToClass(
         classroomId,
         studentId
       );
-
-      return assignedStudent;
     } catch (error) {
       throw error;
     }
@@ -75,10 +68,7 @@ export class StudentController {
   @Patch(":id/classroom")
   async removeStudentFromClass(@Param("id") studentId: string) {
     try {
-      const unassignedStudent =
-        await this.studentService.removeStudentFromClass(studentId);
-
-      return unassignedStudent;
+      return await this.studentService.removeStudentFromClass(studentId);
     } catch (error) {
       throw error;
     }

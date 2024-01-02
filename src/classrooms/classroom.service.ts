@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
   NotFoundException,
   UnprocessableEntityException,
@@ -31,7 +32,7 @@ export class ClassroomService {
     } catch (error) {
       if (error.code === 11000 || error.code === 11001) {
         console.error("Duplicate key error. Classroom already exists!");
-        throw new BadRequestException("classroom already exists");
+        throw new ConflictException("classroom already exists");
       } else {
         console.error("An error occurred:", error);
         throw error;
@@ -53,7 +54,7 @@ export class ClassroomService {
       try {
         const result = await this.classroomsModel.deleteOne({ _id: classroomId });
   
-        if (!result.deletedCount) {
+        if (result.deletedCount === 0) {
           throw new NotFoundException("Could not find classroom");
         }
       } catch (error) {
