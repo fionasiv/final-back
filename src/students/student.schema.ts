@@ -1,5 +1,6 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
-import { Document } from "mongoose";
+import { HydratedDocument, Document } from 'mongoose';
+import { Classroom } from "src/classrooms/classroom.schema";
 
 @Schema()
 export class Student extends Document {
@@ -13,12 +14,12 @@ export class Student extends Document {
   lastName: string;
 
   @Prop()
-  age: number | null;
+  age: number | undefined;
 
   @Prop({ required: true })
   profession: string;
 
-  @Prop({ type: String, ref: "Classroom" })
+  @Prop({ type: String, ref: Classroom.name, required: true })
   classroom: string;
 }
 

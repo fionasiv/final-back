@@ -41,9 +41,14 @@ export class ClassroomService {
   }
 
   async getClassrooms(): Promise<Classroom[]> {
-    const classrooms = await this.classroomsModel.find().exec();
+    try {
 
-    return classrooms;
+      const classrooms = await this.classroomsModel.find().lean();
+  
+      return classrooms;
+    } catch (error) {
+      throw error;
+    }
   }
 
   async deleteClassroom(classroomId: string): Promise<void> {
@@ -91,7 +96,7 @@ export class ClassroomService {
   async getClassroomById(
     classroomId: string
   ) {
-    const classroom = await this.classroomsModel.findById(classroomId).exec();
+    const classroom = await this.classroomsModel.findById(classroomId).lean();
 
     if (!classroom) {
       throw new NotFoundException("Could not find classroom");

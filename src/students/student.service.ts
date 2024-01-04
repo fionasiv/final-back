@@ -44,7 +44,7 @@ export class StudentService {
 
   async getStudents(): Promise<Student[]> {
     try {
-      return await this.studentsModel.find().exec();
+      return await this.studentsModel.find().lean();
     } catch (error) {
       throw error;
     }
@@ -81,7 +81,7 @@ export class StudentService {
     try {
       return await this.studentsModel
       .find({ classroom: classId })
-      .exec();
+      .lean();
     } catch (error) {
       throw error;
     }
@@ -124,7 +124,7 @@ export class StudentService {
   private async getStudentById(
     studentId: string
   ) {
-    const student = await this.studentsModel.findById(studentId).exec();
+    const student = await this.studentsModel.findById(studentId).lean();
 
     if (!student) {
       throw new NotFoundException("Could not find student");
