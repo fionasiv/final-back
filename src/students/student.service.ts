@@ -3,15 +3,13 @@ import {
   NotFoundException,
   Inject,
   BadRequestException,
-  UnprocessableEntityException,
   ConflictException,
 } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Document, Model } from "mongoose";
 import { ClassroomService } from "src/classrooms/classroom.service";
-import { Seats } from "src/enums";
 import { Student } from "./student.schema";
-import { fieldChecks } from "src/consts";
+import { validate } from "@nestjs/class-validator";
 
 @Injectable()
 export class StudentService {
@@ -22,14 +20,10 @@ export class StudentService {
 
   async insertStudent(student: Student): Promise<void> {
     try {
-      student.age = student.age? student.age : null;
-      this.validateStudent(student);
-      const newStudent = {
-        ...student,
-        classroom: "",
-      };
-      const newStudentObject = new this.studentsModel(newStudent);
-      
+      student.age = student.age? student.age : undefined;
+      const newStudentObject = new this.studentsModel(student);
+      validate(newStudentObject);
+
       await newStudentObject.save();
     } catch (error) {
       if (error.code === 11000 || error.code === 11001) {
@@ -55,7 +49,7 @@ export class StudentService {
     const classId = student.classroom;
 
     if (classId) {
-      await this.classroomService.updateSeats(classId, Seats.AVAILABLE);
+      await this.classroomService.updateSeats(classId, 1);
     }
 
     try {
@@ -100,7 +94,7 @@ export class StudentService {
       student.classroom = classId;
       await student.save();
   
-      await this.classroomService.updateSeats(classId, Seats.TAKEN);
+      await this.classroomService.updateSeats(classId, -1);
   
       return student;
     }
@@ -115,7 +109,7 @@ export class StudentService {
       student.classroom = "";
       await student.save();
 
-      await this.classroomService.updateSeats(classId, Seats.AVAILABLE);
+      await this.classroomService.updateSeats(classId, 1);
 
       return student;
     }
@@ -124,27 +118,12 @@ export class StudentService {
   private async getStudentById(
     studentId: string
   ) {
-    const student = await this.studentsModel.findById(studentId).lean();
+    const student = await this.studentsModel.findById(studentId).exec();
 
     if (!student) {
       throw new NotFoundException("Could not find student");
     }
 
     return student;
-  }
-
-  private validateStudent(student: Student) {
-    const isValid =
-      fieldChecks.idCheck(student._id) &&
-      fieldChecks.nameCheck(student.firstName) &&
-      fieldChecks.nameCheck(student.lastName) &&
-      student.age ? fieldChecks.ageCheck(student.age) : true &&
-      fieldChecks.onlyLettersCheck(student.profession);
-
-    if (!isValid) {
-      throw new UnprocessableEntityException("student params are invalid");
-    }
-
-    return isValid;
   }
 }

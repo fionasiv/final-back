@@ -3,15 +3,13 @@ import {
   ConflictException,
   Injectable,
   NotFoundException,
-  UnprocessableEntityException,
 } from "@nestjs/common";
 import { Classroom } from "./classroom.schema";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
-import { Seats } from "src/enums";
-import { fieldChecks } from "src/consts";
 import ClassroomItem from "./interfaces/ClassroomItem";
 import ClassroomDTO from "./interfaces/classroomDTO";
+import { validate } from "@nestjs/class-validator";
 
 @Injectable()
 export class ClassroomService {
@@ -21,11 +19,11 @@ export class ClassroomService {
 
   async insertClassroom(newClassroom: ClassroomDTO): Promise<void> {
     try {
-      this.validateClassroom(newClassroom);
       const classroom = {
         ...newClassroom,
         seatsLeft: newClassroom.capacity,
       };
+      validate(classroom);
       const newClassroomObject = new this.classroomsModel(classroom);
 
       await newClassroomObject.save();
@@ -87,7 +85,7 @@ export class ClassroomService {
       });
   }
 
-  async updateSeats(classId: string, seats: Seats): Promise<void> {
+  async updateSeats(classId: string, seats: 1 | -1): Promise<void> {
     const classroom = await this.getClassroomById(classId);
     classroom.seatsLeft = classroom.seatsLeft + seats;
     await classroom.save();
@@ -96,25 +94,12 @@ export class ClassroomService {
   async getClassroomById(
     classroomId: string
   ) {
-    const classroom = await this.classroomsModel.findById(classroomId).lean();
+    const classroom = await this.classroomsModel.findById(classroomId).exec();
 
     if (!classroom) {
       throw new NotFoundException("Could not find classroom");
     }
 
     return classroom;
-  }
-
-  private validateClassroom(classroom: ClassroomDTO) {
-    const isValid =
-      fieldChecks.numericCheck(classroom._id) &&
-      fieldChecks.onlyLettersCheck(classroom.name) &&
-      fieldChecks.seatsAmountCheck(classroom.capacity);
-
-    if (!isValid) {
-      throw new UnprocessableEntityException("classroom params are invalid");
-    }
-
-    return isValid;
   }
 }
