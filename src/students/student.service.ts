@@ -6,7 +6,7 @@ import {
   ConflictException,
 } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
-import { Document, Model } from "mongoose";
+import { Document, Model, startSession } from "mongoose";
 import { ClassroomService } from "src/classrooms/classroom.service";
 import { Student } from "./student.schema";
 import { validate } from "@nestjs/class-validator";
@@ -20,7 +20,7 @@ export class StudentService {
 
   async insertStudent(student: Student): Promise<void> {
     try {
-      student.age = student.age? student.age : undefined;
+      student.age = student.age ? student.age : undefined;
       const newStudentObject = new this.studentsModel(student);
       validate(newStudentObject);
 
@@ -73,9 +73,7 @@ export class StudentService {
 
   async getClassroomStudents(classId: string): Promise<Student[]> {
     try {
-      return await this.studentsModel
-      .find({ classroom: classId })
-      .lean();
+      return await this.studentsModel.find({ classroom: classId }).lean();
     } catch (error) {
       throw error;
     }
@@ -90,34 +88,44 @@ export class StudentService {
     if (!classroom) {
       throw new BadRequestException("classroom does not exist");
     } else {
+      const session = await this.studentsModel.startSession();
+      session.startTransaction();
+
       const student = await this.getStudentById(studentId);
       student.classroom = classId;
       await student.save();
-  
+
       await this.classroomService.updateSeats(classId, -1);
-  
+
+      session.commitTransaction();
+      session.endSession();
+
       return student;
     }
   }
 
-  async removeStudentFromClass(studentId: string): Promise<Student & Document> {
+  async removeStudentFromClass(studentId: string) {
     const student = await this.getStudentById(studentId);
     if (student.classroom === "") {
       throw new BadRequestException("student is not in a classroom");
     } else {
+      const session = await this.studentsModel.startSession();
+      session.startTransaction();
+
       const classId = student.classroom;
       student.classroom = "";
       await student.save();
 
       await this.classroomService.updateSeats(classId, 1);
 
+      session.commitTransaction();
+      session.endSession();
+
       return student;
     }
   }
 
-  private async getStudentById(
-    studentId: string
-  ) {
+  private async getStudentById(studentId: string) {
     const student = await this.studentsModel.findById(studentId).exec();
 
     if (!student) {

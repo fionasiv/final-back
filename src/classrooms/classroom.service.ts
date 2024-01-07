@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
@@ -40,9 +39,8 @@ export class ClassroomService {
 
   async getClassrooms(): Promise<Classroom[]> {
     try {
-
       const classrooms = await this.classroomsModel.find().lean();
-  
+
       return classrooms;
     } catch (error) {
       throw error;
@@ -51,23 +49,22 @@ export class ClassroomService {
 
   async deleteClassroom(classroomId: string): Promise<void> {
     const classroom = await this.getClassroomById(classroomId);
-    if (classroom.seatsLeft !== classroom.capacity) {
-      throw new BadRequestException("cannot delete a classroom with seats taken");
-    } else {
-      try {
-        const result = await this.classroomsModel.deleteOne({ _id: classroomId });
-  
-        if (result.deletedCount === 0) {
-          throw new NotFoundException("Could not find classroom");
-        }
-      } catch (error) {
-        if (error.code === 1) {
-          console.error("Document not found:", error.message);
-          throw new NotFoundException("Could not find document");
-        } else {
-          console.error("Unexpected error:", error.message);
-          throw error;
-        }
+    try {
+      const result = await this.classroomsModel.deleteOne(
+        { _id: classroomId },
+        { seatsLeft: { $eq: classroom.capacity } }
+      );
+
+      if (result.deletedCount === 0) {
+        throw new NotFoundException("Could not find classroom");
+      }
+    } catch (error) {
+      if (error.code === 1) {
+        console.error("Document not found:", error.message);
+        throw new NotFoundException("Could not find document");
+      } else {
+        console.error("Unexpected error:", error.message);
+        throw error;
       }
     }
   }
@@ -91,9 +88,7 @@ export class ClassroomService {
     await classroom.save();
   }
 
-  async getClassroomById(
-    classroomId: string
-  ) {
+  async getClassroomById(classroomId: string) {
     const classroom = await this.classroomsModel.findById(classroomId).exec();
 
     if (!classroom) {
