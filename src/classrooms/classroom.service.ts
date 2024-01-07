@@ -3,7 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
-import { Classroom } from "./classroom.schema";
+import { Classroom, ClassroomDocument } from "./classroom.schema";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
 import ClassroomItem from "./interfaces/ClassroomItem";
@@ -88,7 +88,7 @@ export class ClassroomService {
     await classroom.save();
   }
 
-  async getClassroomById(classroomId: string) {
+  async getClassroomById(classroomId: string): Promise<ClassroomDocument> {
     const classroom = await this.classroomsModel.findById(classroomId).exec();
 
     if (!classroom) {

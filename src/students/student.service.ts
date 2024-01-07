@@ -8,7 +8,7 @@ import {
 import { InjectModel } from "@nestjs/mongoose";
 import { Document, Model, startSession } from "mongoose";
 import { ClassroomService } from "src/classrooms/classroom.service";
-import { Student } from "./student.schema";
+import { Student, StudentDocument } from "./student.schema";
 import { validate } from "@nestjs/class-validator";
 
 @Injectable()
@@ -125,7 +125,7 @@ export class StudentService {
     }
   }
 
-  private async getStudentById(studentId: string) {
+  private async getStudentById(studentId: string): Promise<StudentDocument> {
     const student = await this.studentsModel.findById(studentId).exec();
 
     if (!student) {

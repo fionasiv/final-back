@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
-import { Document } from "mongoose";
+import { Document, HydratedDocument } from "mongoose";
 import {
   IsInt,
   Min,
@@ -7,8 +7,10 @@ import {
   IsString,
 } from '@nestjs/class-validator';
 
+export type ClassroomDocument = HydratedDocument<Classroom>;
+
 @Schema()
-export class Classroom extends Document {
+export class Classroom {
   @IsString()
   @Prop({ required: true, unique: true })
   _id: string;
