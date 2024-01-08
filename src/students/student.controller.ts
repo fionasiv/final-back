@@ -32,8 +32,8 @@ export class StudentController {
     }
   }
 
-  @Delete(":id")
-  async removeStudentById(@Param("id") studentId: string) {
+  @Delete()
+  async removeStudentById(@Body("id") studentId: string) {
     try {
       await this.studentService.deleteStudent(studentId);
     } catch (error) {
@@ -41,8 +41,8 @@ export class StudentController {
     }
   }
 
-  @Get("classroom/:id")
-  async getClassroomStudents(@Param("id") classroomId: string) {
+  @Get("classroom")
+  async getClassroomStudents(@Body("id") classroomId: string) {
     try {
       return await this.studentService.getClassroomStudents(classroomId);
     } catch (error) {
@@ -50,10 +50,10 @@ export class StudentController {
     }
   }
 
-  @Patch(":id/classroom/:classId")
+  @Patch("classroom/new")
   async addStudentToClass(
-    @Param("id") studentId: string,
-    @Param("classId") classroomId: string
+    @Body("id") studentId: string,
+    @Body("classId") classroomId: string
   ) {
     try {
       return await this.studentService.addStudentToClass(
@@ -65,8 +65,8 @@ export class StudentController {
     }
   }
 
-  @Patch(":id/classroom")
-  async removeStudentFromClass(@Param("id") studentId: string) {
+  @Patch("classroom")
+  async removeStudentFromClass(@Body("id") studentId: string) {
     try {
       return await this.studentService.removeStudentFromClass(studentId);
     } catch (error) {

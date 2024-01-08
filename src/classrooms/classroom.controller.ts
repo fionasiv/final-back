@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Post } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, Post, Query } from "@nestjs/common";
 import { ClassroomService } from "./classroom.service";
 import ClassroomDTO from "./interfaces/classroomDTO";
 
@@ -37,9 +37,8 @@ export class ClassroomController {
       throw error;
     }
   }
-
-  @Delete(":id")
-  async removeClassroomById(@Param("id") classroomId: string) {
+  @Delete("")
+  async removeClassroomById(@Body("id") classroomId: string): Promise<void> {
     try {
       await this.classroomService.deleteClassroom(classroomId);
     } catch (error) {
